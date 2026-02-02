@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <title>SuperSpeller</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #4834d4;
+            --primary-dark: #301bbf;
+            --primary-light: #686de0;
+            --accent-color: #f0932b;
+            --accent-dark: #d35400;
+            --success-color: #6ab04c;
+            --success-dark: #44bd32;
+            --danger-color: #eb4d4b;
+            --danger-dark: #c0392b;
+            --bg-app: #c7ecee;
+            --bg-card: #ffffff;
+            --text-dark: #2d3436;
+            --border-radius: 16px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-app);
+            display: flex; justify-content: center; align-items: center;
+            height: 100dvh; margin: 0; padding: 0;
+            color: var(--text-dark);
+            background-image: radial-gradient(var(--primary-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        .container {
+            background: var(--bg-card);
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 95%;
+            max-width: 500px;
+            height: 92dvh;
+            max-height: 850px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: 4px solid #fff;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        .app-header { padding: 15px 0 5px 0; flex-shrink: 0; cursor: pointer; }
+        h1 { font-weight: 800; color: var(--primary-color); letter-spacing: -1px; margin: 0; font-size: 1.6em; transition: transform 0.2s; }
+        h1:active { transform: scale(0.95); }
+
+        /* SCROLL AREA */
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px;
+            -webkit-overflow-scrolling: touch;
+            display: block;
+        }
+
+        /* FOOTER AREA */
+        .fixed-footer {
+            padding: 15px;
+            background: var(--bg-card);
+            border-top: 1px solid #f1f2f6;
+            flex-shrink: 0;
+            z-index: 20;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* KNOPPEN */
+        .btn-3d {
+            border: none; padding: 12px; font-size: 15px; font-weight: 800;
+            border-radius: 12px; cursor: pointer; transition: all 0.1s ease;
+            text-transform: uppercase; letter-spacing: 0.5px; width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Poppins', sans-serif;
+        }
+        .btn-3d:active { transform: translateY(4px); border-bottom-width: 0px !important; margin-top: 4px; }
+
+        .btn-primary { background: var(--primary-color); color: white; border-bottom: 5px solid var(--primary-dark); }
+        .btn-accent { background: var(--accent-color); color: white; border-bottom: 5px solid var(--accent-dark); }
+        .btn-skip { background: #95a5a6; color: white; border-bottom: 5px solid #7f8c8d; font-size: 13px; }
+
+        /* RAKET START KNOP */
+        .super-btn {
+            position: relative; width: 100%; padding: 18px; font-size: 18px; font-weight: 800;
+            color: white; background-color: var(--primary-color); border: none; border-radius: 16px;
+            cursor: pointer; box-shadow: 0 6px 0 var(--primary-dark); transition: transform 0.1s, box-shadow 0.1s;
+            display: flex; align-items: center; justify-content: center; gap: 15px; overflow: visible;
+            text-transform: uppercase; font-family: 'Poppins', sans-serif; z-index: 100;
+        }
+        .super-btn:active, .super-btn.launching { transform: translateY(6px); box-shadow: 0 0 0 var(--primary-dark); }
+
+        .rocket-icon-btn { display: inline-block; font-size: 1.4em; position: relative; transition: transform 0.2s; z-index: 101; }
+        .super-btn:not(.launching) .rocket-icon-btn { animation: engineIdle 0.4s infinite alternate ease-in-out; }
+        .super-btn.launching .rocket-icon-btn { animation: blastOff 0.8s forwards ease-in; }
+        .rocket-icon-btn::after { content: '💨'; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%) scale(0); font-size: 0.8em; opacity: 0; }
+        .super-btn.launching .rocket-icon-btn::after { animation: smokeTrail 0.8s forwards; }
+
+        @keyframes engineIdle { 0% { transform: rotate(0deg) translateY(0); } 100% { transform: rotate(5deg) translateY(-2px); } }
+        @keyframes blastOff { 0% { transform: scale(1) translateY(0); } 20% { transform: scale(0.9) translateY(5px); } 100% { transform: scale(1.5) translate(150px, -500px) rotate(45deg); opacity: 0; } }
+        @keyframes smokeTrail { 0% { opacity: 0; transform: translateX(-50%) scale(0.5); } 100% { opacity: 0; transform: translateX(-50%) scale(3) translateY(80px); } }
+
+        /* GROEPEN & CATEGORIEËN */
+        .group-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 5px; }
+        .group-btn { background: #f1f2f6; border: 2px solid #dfe6e9; border-bottom-width: 4px; border-radius: 12px; padding: 12px 0; font-weight: 800; font-size: 1.1em; color: var(--text-dark); cursor: pointer; transition: all 0.1s; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .group-btn span { font-size: 0.55em; font-weight: 600; opacity: 0.7; margin-top: -2px;}
+        .group-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .group-btn.selected { background: var(--primary-color); color: white; border-color: var(--primary-dark); border-bottom-width: 4px; }
+        .group-btn.selected span { opacity: 0.9; color: #dfe6e9; }
+
+        .mode-selector { display: flex; gap: 10px; margin-top: 5px; }
+        .mode-btn { flex: 1; padding: 12px; border: 2px solid #dfe6e9; border-bottom-width: 4px; border-radius: 12px; cursor: pointer; font-weight: 700; background: #f1f2f6; font-size: 0.9em; display: flex; align-items: center; justify-content: center; }
+        .mode-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .mode-btn.selected { background: var(--primary-color); border-color: var(--primary-dark); color: white; }
+
+        #cat-wrapper { transition: all 0.3s ease; overflow: hidden; max-height: 0; opacity: 0; }
+        #cat-wrapper.open { max-height: 1000px; opacity: 1; margin-top: 10px; }
+        .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; padding-bottom: 10px; }
+        .cat-option input { display: none; }
+        .cat-tile { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 8px 5px; min-height: 50px; background: #fff; border: 2px solid #dfe6e9; border-radius: 10px; border-bottom-width: 3px; font-weight: 700; font-size: 11px; cursor: pointer; color: var(--text-dark); text-align: center; transition: all 0.2s; line-height: 1.2; }
+        .cat-tile:hover { transform: translateY(-1px); border-color: var(--primary-color); }
+        .cat-option input:checked + .cat-tile { background: #dff9fb; border-color: var(--primary-color); color: var(--primary-color); border-bottom-width: 3px; }
+        .cat-tile small { font-size: 0.85em; opacity: 0.6; margin-top: 4px; background: #f1f2f6; padding: 1px 6px; border-radius: 10px; }
+
+        /* RAKET PROGRESS BAR */
+        .rocket-progress-container { position: relative; height: 14px; background: #e0e6ed; border-radius: 10px; margin: 20px 0 25px 0; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
+        .rocket-track-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #5f27cd; width: 0%; border-radius: 10px; opacity: 0.8; transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1); }
+        .rocket-cursor { position: absolute; top: 50%; left: 0%; transform: translate(-50%, -50%); transition: left 0.8s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10; display: flex; align-items: center; }
+        .rocket-ship { font-size: 28px; animation: hoverRocket 1.5s ease-in-out infinite alternate; transform-origin: center center; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.1)); }
+        .rocket-fire { position: absolute; left: -10px; top: 50%; transform: translateY(-50%) rotate(90deg); font-size: 16px; opacity: 0; transition: opacity 0.2s; }
+        .flying .rocket-fire { opacity: 1; animation: flicker 0.1s infinite; }
+        @keyframes hoverRocket { from { transform: translateY(-2px) rotate(45deg); } to { transform: translateY(2px) rotate(45deg); } }
+        @keyframes flicker { 0% { opacity: 0.8; transform: translateY(-50%) rotate(90deg) scale(1); } 100% { opacity: 1; transform: translateY(-50%) rotate(90deg) scale(1.2); } }
+
+        /* HUD & SCORE FIRE LEVELS */
+        .hud { display: flex; justify-content: space-between; align-items: center; background: var(--text-dark); color: white; padding: 8px 15px; border-radius: 50px; font-weight: 700; font-size: 0.9em; transition: all 0.3s; }
+
+        #score { transition: all 0.3s; display: inline-block; }
+        .score-fire-1 { color: #f0932b !important; text-shadow: 0 0 5px #f0932b; }
+        .score-fire-2 { color: #ff9f43 !important; text-shadow: 0 0 10px #e17055; animation: pulseText 1s infinite alternate; }
+        .score-fire-3 { color: #ff6b6b !important; text-shadow: 0 0 10px #ff9f43, 0 0 20px #ee5253; animation: burnText 0.6s infinite alternate; }
+
+        @keyframes pulseText { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+        @keyframes burnText { 0% { transform: scale(1.05); text-shadow: 0 0 10px #ff9f43, 0 0 20px #ee5253; } 100% { transform: scale(1.1); text-shadow: 0 0 15px #ff9f43, 0 0 30px #ff4757; } }
+
+        /* INPUT AREA */
+        .input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: stretch; }
+
+        .btn-icon {
+            width: 50px; flex-shrink: 0; padding: 0; font-size: 1.4em;
+            border: none; border-radius: 12px; cursor: pointer; border-bottom: 4px solid;
+            display: flex; align-items: center; justify-content: center; transition: all 0.1s;
+        }
+        .btn-icon:active { transform: translateY(3px); border-bottom-width: 1px; margin-top: 3px; }
+        .btn-icon-audio { background: var(--accent-color); color: white; border-color: var(--accent-dark); }
+
+        .btn-icon-hint {
+            background: #ffda79; color: #d35400; border-color: #cc8e35; border-bottom-width: 5px;
+            width: auto; min-width: 55px; padding: 0 14px;
+            font-size: 1.3em; letter-spacing: 3px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+        .btn-icon-hint:active { border-bottom-width: 2px; transform: translateY(3px); box-shadow: none; }
+        .btn-icon-hint:disabled { background: #dfe6e9; color: #b2bec3; border-color: #b2bec3; box-shadow: none; border-bottom-width: 4px; }
+
+        input[type="text"] {
+            width: 100%; padding: 12px; font-size: 18px; text-align: center;
+            border: 3px solid #dfe6e9; border-radius: 12px; outline: none;
+            font-family: 'Poppins', sans-serif; font-weight: 700; border-bottom-width: 5px;
+            box-sizing: border-box; background: #fdfdfd; transition: all 0.3s;
+        }
+        input[type="text"]:focus { border-color: var(--primary-color); background: #fff; }
+        input[type="text"]:disabled { background-color: #f1f2f6; color: #95a5a6; border-color: #dfe6e9; cursor: not-allowed; }
+
+        .hint-popup-text {
+            background: #fff7d9; color: var(--accent-dark);
+            padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 0.85em; font-style: italic;
+            margin-bottom: 10px; border-left: 4px solid var(--accent-color);
+            text-align: left; animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); }}
+
+        /* BIG FEEDBACK */
+        #main-feedback-container {
+            min-height: 60px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 10px 0;
+        }
+        .big-feedback-text {
+            font-size: 2em; font-weight: 900; text-transform: uppercase;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 1; transform: scale(1); } }
+
+        .btn-container { display: flex; gap: 10px; }
+        .settings-section { margin-bottom: 20px; text-align: left; }
+        .hidden { display: none !important; }
+
+        /* Loading Screen */
+        #loading-screen { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .loader-text { font-weight: 800; font-size: 1.5em; color: var(--primary-color); margin-top: 20px; animation: pulse 1s infinite; }
+        .loader-rocket { font-size: 4em; animation: hoverRocket 0.5s infinite alternate; }
+        @keyframes pulse { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* Modal */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 400px; text-align: center; border: 4px solid var(--danger-color); }
+
+        /* QUIZ */
+        .quiz-container { display: grid; gap: 8px; margin-bottom: 10px; width: 100%; }
+        .quiz-btn { padding: 12px; background: white; border: 2px solid #dfe6e9; border-bottom-width: 4px; border-radius: 12px; cursor: pointer; font-weight: 700; color: var(--text-dark); text-align: left; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.2s; }
+        .quiz-btn:hover { border-color: var(--primary-color); }
+        .quiz-btn.correct { background: var(--success-color); border-color: var(--success-dark); color: white; pointer-events: none; }
+        .quiz-btn.wrong { background: var(--danger-color); border-color: var(--danger-dark); color: white; }
+        .quiz-btn.disabled { pointer-events: none; opacity: 0.6; transform: scale(0.98); }
+        .key-badge { background: var(--text-dark); color: white; padding: 2px 6px; border-radius: 5px; font-size: 0.8em; margin-right: 8px;}
+
+        /* ANIMATIES */
+        .shake { animation: shake 0.4s; }
+        .pop { animation: pop 0.4s; }
+        @keyframes unlockPop { 0% { transform: scale(1); border-color: #dfe6e9; } 50% { transform: scale(1.05); border-color: var(--success-color); box-shadow: 0 0 15px rgba(106, 176, 76, 0.5); } 100% { transform: scale(1); border-color: var(--primary-color); } }
+        .input-unlocked { animation: unlockPop 0.6s ease-out forwards; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+        @keyframes pop { 50% { transform: scale(1.1); } }
+    </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:99;"></canvas>
+
+<div id="penalty-modal" class="modal-backdrop hidden">
+    <div class="modal-content">
+        <h2 style="color:var(--danger-color); margin:0;">⚠️ HELAAS!</h2>
+        <div id="penalty-target-word" style="font-size:1.8em; font-weight:900; margin:15px 0; color:var(--danger-color); text-transform:uppercase;">WOORD</div>
+        <p>Typ nog <b id="penalty-count" style="color:var(--danger-color)">3</b> keer over.</p>
+        <input type="text" id="penaltyInput" placeholder="Typ over..." autocomplete="off" style="border-color:var(--danger-color)!important;">
+    </div>
+</div>
+
+<div id="stop-modal" class="modal-backdrop hidden">
+    <div class="modal-content" style="border-color:var(--primary-color);">
+        <h2 style="color:var(--primary-color); margin:0;">STOPPEN?</h2>
+        <p>Wil je terug naar het hoofdmenu?</p>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn-3d btn-primary" onclick="goToStart()">JA, STOPPEN</button>
+            <button class="btn-3d btn-skip" onclick="document.getElementById('stop-modal').classList.add('hidden')">NEE, DOORGAAN</button>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="app-header" onclick="askToStop()">
+        <h1>⚡ SuperSpeller</h1>
+    </div>
+
+    <div id="setup-screen" class="scroll-content">
+        <div class="settings-section">
+            <label style="color:var(--primary-color); font-weight:800;">1. KIES JE KLAS</label>
+            <div class="group-grid">
+                <div class="group-btn" id="grp-4" onclick="selectGroup('4')">4 <span>GROEP</span></div>
+                <div class="group-btn" id="grp-5" onclick="selectGroup('5')">5 <span>GROEP</span></div>
+                <div class="group-btn selected" id="grp-6" onclick="selectGroup('6')">6 <span>GROEP</span></div>
+                <div class="group-btn" id="grp-7" onclick="selectGroup('7')">7 <span>GROEP</span></div>
+                <div class="group-btn" id="grp-8" onclick="selectGroup('8')">8 <span>GROEP</span></div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <label style="color:var(--primary-color); font-weight:800;">2. MOEILIJKHEID</label>
+            <div class="mode-selector">
+                <div class="mode-btn" id="mode-easy" onclick="selectMode('easy')">MET HULP</div>
+                <div class="mode-btn selected" id="mode-normal" onclick="selectMode('normal')">ZONDER HULP</div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <label style="color:var(--primary-color); font-weight:800;">3. KIES CATEGORIEËN</label>
+            <div class="mode-selector">
+                <div class="mode-btn selected" id="cat-mode-all" onclick="selectCatMode('all')">ALLEMAAL</div>
+                <div class="mode-btn" id="cat-mode-manual" onclick="selectCatMode('manual')">ZELF KIEZEN</div>
+            </div>
+            <div id="cat-wrapper">
+                <div id="cat-grid" class="cat-grid" style="margin-top:10px;"></div>
+            </div>
+        </div>
+        <div style="height:20px;"></div>
+    </div>
+
+    <div id="loading-screen" class="hidden">
+        <div class="loader-rocket">🚀</div>
+        <div class="loader-text">OPLADEN...</div>
+    </div>
+
+    <div id="start-footer" class="fixed-footer">
+        <button class="super-btn" onclick="triggerLaunch(this)">
+            START GAME <span class="rocket-icon-btn">🚀</span>
+        </button>
+    </div>
+
+    <div id="game-screen" class="hidden" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+
+        <div class="scroll-content">
+            <div style="height:60px;"></div>
+
+            <div id="hud-container" class="hud">
+                <span>SCORE: <span id="score" style="color:var(--accent-color);">0</span></span>
+                <span id="lives">❤️❤️❤️</span>
+            </div>
+
+            <div class="rocket-progress-container">
+                <div class="rocket-track-fill" id="track-fill"></div>
+                <div class="rocket-cursor" id="rocket-cursor">
+                    <div class="rocket-fire">🔥</div>
+                    <div class="rocket-ship">🚀</div>
+                </div>
+            </div>
+
+            <button class="btn-3d btn-accent" onclick="playCurrentWord()" style="padding:10px; margin-bottom:15px; font-size:13px; display:none;">🔊 LUISTER NOG EENS</button>
+
+            <div id="category-quiz" class="quiz-container hidden"></div>
+
+            <div id="main-feedback-container"></div>
+
+            <div style="height:10px;"></div>
+        </div>
+
+        <div id="game-input-area" class="fixed-footer hidden">
+
+             <div id="footer-hint-text" class="hint-popup-text hidden"></div>
+
+             <div class="input-row">
+                 <button class="btn-icon btn-icon-audio" onclick="playCurrentWord()">🔊</button>
+                 <button class="btn-icon btn-icon-hint" id="footer-hint-btn" onclick="revealHint()">💡💡💡</button>
+                 <input type="text" id="userInput" placeholder="Typ het woord..." autocomplete="off">
+             </div>
+
+             <div id="feedback" style="margin:5px 0; font-weight:800; height:18px; font-size:0.9em;"></div>
+
+             <div class="btn-container">
+                 <button id="checkBtn" class="btn-3d btn-primary" style="flex:2;" onclick="checkAnswer()">CONTROLEER</button>
+                 <button id="skipBtn" class="btn-3d btn-skip" style="flex:1;" onclick="skipWord()">OVERSLAAN</button>
+             </div>
+
+             <button onclick="askToStop()" style="background:none; border:none; color:#b2bec3; margin-top:10px; cursor:pointer; font-weight:600; font-size:0.8em; width:100%;">Stoppen</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="hidden scroll-content" style="display:flex; flex-direction:column; justify-content:center;">
+        <h2 style="font-size:1.8em; margin:0;">FINISH! 🏁</h2>
+        <h1 id="final-score" style="color:var(--primary-color); font-size:3.5em; margin:10px 0;">0</h1>
+        <div id="mistake-list" style="text-align:left; margin:15px 0; background:#f1f2f6; padding:15px; border-radius:12px; border:2px solid #dfe6e9; max-height:200px; overflow-y:auto;"></div>
+        <div class="fixed-footer" style="border:none; background:none;">
+            <button class="btn-3d btn-primary" onclick="location.reload()">NIEUWE RONDE</button>
+        </div>
+    </div>
+</div>
+
+<script src="staalData.js"></script>
+
+<script>
+    // HELPER VOOR GROEP MAPPING
+    function createRange(s, e) { let a=[]; for(let i=s; i<=e; i++) a.push(i); return a; }
+    const groupMapping = { "4": createRange(1, 12), "5": createRange(1, 19), "6": createRange(1, 28), "7": createRange(1, 34), "8": createRange(1, 34) };
+
+    let selectedMode = 'normal', selectedGroup = '6', selectedCatMode = 'all';
+    let gameQueue = [], activeCategories = [], currentIndex = 0, score = 0, currentWordLives = 3, globalHints = 3, mistakes = [], penaltyActive = false, penaltyCounter = 0, isProcessing = false;
+    let currentQuizOptions = [], currentFocusIndex = -1;
+
+    // SCORE VARS
+    let currentCategoryAttempts = 0;
+    let currentStreak = 0;
+
+    window.onload = function() {
+        try {
+            updateCategoryList();
+            document.getElementById('setup-screen').classList.remove('hidden');
+            document.getElementById('start-footer').classList.remove('hidden');
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    function selectGroup(grp) {
+        playSound('ui'); // UI GELUID
+        selectedGroup = grp;
+        document.querySelectorAll('.group-btn').forEach(btn => btn.classList.remove('selected'));
+        document.getElementById('grp-' + grp).classList.add('selected');
+        updateCategoryList();
+    }
+
+    function selectCatMode(mode) {
+        playSound('ui'); // UI GELUID
+        selectedCatMode = mode;
+        const wrapper = document.getElementById('cat-wrapper');
+        const btnAll = document.getElementById('cat-mode-all');
+        const btnManual = document.getElementById('cat-mode-manual');
+
+        if (mode === 'all') {
+            btnAll.classList.add('selected');
+            btnManual.classList.remove('selected');
+            wrapper.classList.remove('open');
+        } else {
+            btnManual.classList.add('selected');
+            btnAll.classList.remove('selected');
+            wrapper.classList.add('open');
+        }
+    }
+
+    function updateCategoryList() {
+        const container = document.getElementById('cat-grid');
+        if(!container) return;
+        container.innerHTML = "";
+        let targetCats = groupMapping[selectedGroup] || [];
+        const hiddenCats = [23, 28]; // Verborgen
+
+        staalData.forEach(cat => {
+            if(!targetCats.includes(cat.nr)) return;
+            if(hiddenCats.includes(cat.nr)) return;
+
+            const label = document.createElement('label');
+            label.className = "cat-option";
+
+            // UI GELUID OP TEGEL
+            label.onclick = function() { playSound('ui'); };
+
+            label.innerHTML = `
+                <input type="checkbox" value="${cat.nr}" checked>
+                <div class="cat-tile">
+                    <span>${cat.nr}. ${cat.naam}</span>
+                    <small>${cat.woorden.length}</small>
+                </div>
+            `;
+            container.appendChild(label);
+        });
+    }
+
+    function toggleAllCats(s) { document.querySelectorAll('#cat-grid input').forEach(b => b.checked = s); }
+
+    function selectMode(m) {
+        playSound('ui'); // UI GELUID
+        selectedMode = m;
+        document.getElementById('mode-easy').classList.toggle('selected', m==='easy');
+        document.getElementById('mode-normal').classList.toggle('selected', m==='normal');
+    }
+
+    function triggerLaunch(btn) {
+        playSound('launch');
+        btn.classList.add('launching');
+
+        setTimeout(() => {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('start-footer').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+
+            setTimeout(() => {
+                startGame();
+            }, 1500);
+
+            setTimeout(() => btn.classList.remove('launching'), 500);
+        }, 800);
+    }
+
+    function startGame() {
+        let selectedIds = [];
+        const hiddenCats = [23, 28];
+
+        if (selectedCatMode === 'all') {
+            selectedIds = (groupMapping[selectedGroup] || []).filter(id => !hiddenCats.includes(id));
+        } else {
+            const checks = document.querySelectorAll('#cat-grid input:checked');
+            if(checks.length === 0) return alert("Kies minstens één categorie!");
+            selectedIds = Array.from(checks).map(cb => parseInt(cb.value));
+        }
+
+        gameQueue = []; activeCategories = [];
+
+        selectedIds.forEach(id => {
+            const cat = staalData.find(c => c.nr === id);
+            if(cat) {
+                activeCategories.push(cat);
+                cat.woorden.forEach(w => gameQueue.push({ word: w, catNr: cat.nr, catName: cat.naam, hint: cat.hint }));
+            }
+        });
+
+        if(gameQueue.length === 0) return alert("Geen woorden gevonden voor deze selectie.");
+
+        for(let i=gameQueue.length-1; i>0; i--){ const j=Math.floor(Math.random()*(i+1)); [gameQueue[i],gameQueue[j]] = [gameQueue[j],gameQueue[i]]; }
+        gameQueue = gameQueue.slice(0, 20);
+
+        currentIndex=0; score=0; mistakes=[]; penaltyActive=false; globalHints=3; currentStreak=0;
+
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        document.getElementById('game-input-area').classList.remove('hidden');
+        loadWord();
+    }
+
+    function askToStop() {
+        if (!document.getElementById('game-screen').classList.contains('hidden')) {
+            document.getElementById('stop-modal').classList.remove('hidden');
+        }
+    }
+
+    function goToStart() {
+        document.getElementById('stop-modal').classList.add('hidden');
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('game-input-area').classList.add('hidden');
+        document.getElementById('result-screen').classList.add('hidden');
+
+        document.getElementById('setup-screen').classList.remove('hidden');
+        document.getElementById('start-footer').classList.remove('hidden');
+    }
+
+    function loadWord() {
+        const item = gameQueue[currentIndex];
+        if(!item) return;
+
+        currentWordLives = 3;
+        currentCategoryAttempts = 0;
+        updateHUD();
+        updateRocketProgress();
+
+        const bigFeed = document.getElementById('main-feedback-container');
+        bigFeed.innerHTML = "";
+
+        const input = document.getElementById('userInput');
+        input.value = "";
+        input.classList.remove('input-unlocked');
+        input.classList.remove('pop');
+
+        document.getElementById('feedback').innerText="";
+        document.getElementById('footer-hint-text').innerText = "";
+        document.getElementById('footer-hint-text').classList.add('hidden');
+        document.getElementById('footer-hint-btn').disabled = false;
+
+        document.getElementById('rocket-cursor').classList.remove('flying');
+
+        if(selectedMode === 'easy') {
+            document.getElementById('footer-hint-text').classList.remove('hidden');
+            document.getElementById('footer-hint-text').innerText = item.catName + ": " + item.hint;
+            document.getElementById('footer-hint-btn').disabled = true;
+            document.getElementById('category-quiz').classList.add('hidden');
+
+            input.disabled = false;
+            input.placeholder = "Typ het woord...";
+            setTimeout(()=>input.focus(), 100);
+        } else {
+            document.getElementById('footer-hint-btn').disabled = (globalHints <= 0);
+            document.getElementById('category-quiz').classList.remove('hidden');
+
+            input.disabled = true;
+            input.placeholder = "Kies eerst de categorie ☝️";
+
+            setupQuiz(item);
+        }
+        playCurrentWord();
+    }
+
+    function updateRocketProgress() {
+        const pct = (currentIndex / gameQueue.length) * 100;
+        document.getElementById('rocket-cursor').style.left = pct + "%";
+        document.getElementById('track-fill').style.width = pct + "%";
+
+        const rocket = document.getElementById('rocket-cursor');
+        rocket.classList.remove('flying');
+        void rocket.offsetWidth;
+        rocket.classList.add('flying');
+    }
+
+    function revealHint() {
+        if(globalHints > 0) {
+            playSound('hint');
+            globalHints--;
+            updateHUD();
+
+            const item = gameQueue[currentIndex];
+            const hintBox = document.getElementById('footer-hint-text');
+            hintBox.innerText = item.catName + ": " + item.hint;
+            hintBox.classList.remove('hidden');
+
+            document.getElementById('footer-hint-btn').disabled = true;
+        }
+    }
+
+    function setupQuiz(item) {
+        const c = document.getElementById('category-quiz'); c.innerHTML="";
+        let opts = [item.catName];
+        let others = activeCategories.filter(x=>x.naam!==item.catName).map(x=>x.naam);
+        others.sort(()=>Math.random()-0.5);
+        if(others.length>0) opts.push(others[0]);
+        if(others.length>1) opts.push(others[1]);
+        while(opts.length<3) {
+            let r = staalData[Math.floor(Math.random()*staalData.length)].naam;
+            if(!opts.includes(r)) opts.push(r);
+        }
+        opts.sort(()=>Math.random()-0.5);
+
+        const keys=['A','B','C'];
+        opts.forEach((o,i) => {
+            let b = document.createElement('button'); b.className="quiz-btn";
+            b.innerHTML=`<span class="key-badge">${keys[i]}</span> ${o}`;
+            b.onclick = () => {
+                if(b.classList.contains('disabled')) return;
+
+                if(o===item.catName) {
+                    b.classList.add('correct');
+                    playSound('correct_cat');
+
+                    let points = 0;
+                    if(currentCategoryAttempts === 0) points = 15;
+                    else if(currentCategoryAttempts === 1) points = 5;
+                    else points = 0;
+
+                    score += points;
+                    updateHUD();
+
+                    const allBtns = document.querySelectorAll('.quiz-btn');
+                    allBtns.forEach(btn => btn.classList.add('disabled'));
+
+                    const input = document.getElementById('userInput');
+                    input.disabled = false;
+                    input.placeholder = "Typ het woord...";
+                    input.classList.add('input-unlocked');
+                    input.focus();
+
+                    playCurrentWord();
+                } else {
+                    b.classList.add('wrong');
+                    playSound('err');
+                    currentCategoryAttempts++;
+                }
+            };
+            c.appendChild(b);
+        });
+    }
+
+    function checkAnswer() {
+        if(isProcessing) return;
+        const input = document.getElementById('userInput');
+        if(input.disabled) return;
+
+        const val = input.value.trim().toLowerCase();
+        const target = gameQueue[currentIndex].word.toLowerCase();
+
+        const bigFeed = document.getElementById('main-feedback-container');
+
+        if(val === target) {
+            score += 10;
+            currentStreak++;
+            updateHUD();
+
+            bigFeed.innerHTML = `<div class="big-feedback-text" style="color:var(--success-color);">✅ GOED!</div>`;
+            playSound('win');
+            isProcessing=true;
+            input.classList.add('pop');
+            setTimeout(nextWord, 1200);
+        } else {
+            currentStreak = Math.max(0, currentStreak - 1);
+            currentWordLives--;
+            updateHUD();
+
+            bigFeed.innerHTML = `<div class="big-feedback-text" style="color:var(--danger-color);">❌ FOUT</div>`;
+
+            input.classList.add('shake');
+            setTimeout(()=>input.classList.remove('shake'), 400);
+            playSound('err');
+
+            if(currentWordLives<=0) activatePenalty();
+        }
+    }
+
+    function activatePenalty() {
+        penaltyActive=true; penaltyCounter=3;
+        document.getElementById('penalty-modal').classList.remove('hidden');
+        document.getElementById('penalty-target-word').innerText = gameQueue[currentIndex].word;
+        document.getElementById('penalty-count').innerText=3;
+        document.getElementById('penaltyInput').value=""; document.getElementById('penaltyInput').focus();
+    }
+
+    document.getElementById('penaltyInput').addEventListener('keypress', (e)=>{
+        if(e.key==='Enter') {
+            if(document.getElementById('penaltyInput').value.toLowerCase() === gameQueue[currentIndex].word.toLowerCase()) {
+                penaltyCounter--; document.getElementById('penaltyInput').value=""; playSound('pop');
+                if(penaltyCounter<=0) { document.getElementById('penalty-modal').classList.add('hidden'); mistakes.push(gameQueue[currentIndex].word); penaltyActive=false; nextWord(); }
+                else document.getElementById('penalty-count').innerText = penaltyCounter;
+            } else { document.getElementById('penaltyInput').classList.add('shake'); setTimeout(()=>document.getElementById('penaltyInput').classList.remove('shake'), 400); playSound('err'); }
+        }
+    });
+
+    function nextWord() {
+        isProcessing=false; currentIndex++;
+        if(currentIndex<gameQueue.length) loadWord();
+        else {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('game-input-area').classList.add('hidden');
+            document.getElementById('final-score').innerText = score+" Punten";
+            const mList = document.getElementById('mistake-list');
+            mList.innerHTML = mistakes.length ? "<h3>Fouten:</h3>"+mistakes.map(m=>`<div>❌ ${m}</div>`).join('') : "<h3>Foutloos! 🎉</h3>";
+            new Audio('motivatie/lekker.mp3').play().catch(()=>{});
+            fireConfetti();
+        }
+    }
+
+    function playCurrentWord() {
+        const w = gameQueue[currentIndex].word;
+        new Audio(`mp3/${w.replace(/'/g,"")}.mp3`).play().catch(()=> { const u=new SpeechSynthesisUtterance(w); u.lang='nl-NL'; speechSynthesis.speak(u); });
+    }
+    function skipWord() { if(!isProcessing) { mistakes.push(gameQueue[currentIndex].word); nextWord(); } }
+
+    function updateHUD() {
+        const scoreEl = document.getElementById('score');
+        scoreEl.innerText = score;
+
+        scoreEl.className = '';
+
+        if(currentStreak >= 5) {
+            scoreEl.classList.add('score-fire-3');
+        } else if(currentStreak >= 3) {
+            scoreEl.classList.add('score-fire-2');
+        } else if(currentStreak >= 2) {
+            scoreEl.classList.add('score-fire-1');
+        }
+
+        document.getElementById('lives').innerText="❤️".repeat(currentWordLives) || "💀";
+
+        const btn = document.getElementById('footer-hint-btn');
+        if(globalHints === 3) btn.innerText = "💡💡💡";
+        else if(globalHints === 2) btn.innerText = "💡💡";
+        else if(globalHints === 1) btn.innerText = "💡";
+        else btn.innerText = "⛔";
+    }
+
+    function playSound(type) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        const now = ctx.currentTime;
+
+        if (type === 'launch') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(50, now);
+            osc.frequency.exponentialRampToValueAtTime(150, now + 1.5);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+            osc.start(now);
+            osc.stop(now + 1.5);
+            return;
+        }
+        else if (type === 'hint') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(500, now);
+            osc.frequency.exponentialRampToValueAtTime(1000, now + 0.3);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            osc.start(now);
+            osc.stop(now + 0.5);
+            return;
+        }
+        else if (type === 'ui') {
+            // UI CLICK SOUND (Korte 'tik')
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            return;
+        }
+
+        if(type==='win') { osc.frequency.setValueAtTime(523, now); osc.frequency.exponentialRampToValueAtTime(1046, now+0.3); }
+        else if(type==='err') { osc.type='sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(50, now+0.3); }
+        else if(type==='correct_cat') { osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(1200, now+0.1); }
+        else if(type==='pop') { osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now+0.1); }
+
+        gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now+0.3);
+        osc.start(now); osc.stop(now+0.3);
+    }
+
+    function fireConfetti() { const c=document.getElementById('confetti-canvas'), x=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight; let p=Array(50).fill().map(()=>({x:Math.random()*c.width,y:-Math.random()*c.height,c:`hsl(${Math.random()*360},100%,50%)`})); function d(){x.clearRect(0,0,c.width,c.height); p.forEach(i=>{i.y+=5;x.fillStyle=i.c;x.fillRect(i.x,i.y,10,10);if(i.y>c.height)i.y=0});requestAnimationFrame(d)} d(); }
+
+    document.getElementById('userInput').addEventListener('keypress', e=>{if(e.key==='Enter')checkAnswer()});
+</script>
+</body>
+</html>
